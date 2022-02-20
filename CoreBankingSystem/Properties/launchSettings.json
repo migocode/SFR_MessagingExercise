@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CoreBankingSystem": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

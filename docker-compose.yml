@@ -1,0 +1,63 @@
+version: '3.4'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_CREATE_TOPICS: "payments:1:1,laundrycheck:1:1"
+
+  corebankingsystem:
+    image: ${DOCKER_REGISTRY-}corebankingsystem
+    container_name: corebankingsystem
+    build:
+      context: .
+      dockerfile: CoreBankingSystem/Dockerfile
+    depends_on:
+      - kafka
+    environment:
+        TopicPayments: "payments"
+        KafkaServers: "kafka:9092"
+
+  moneylaunderingservice:
+    image: ${DOCKER_REGISTRY-}moneylaunderingservice
+    container_name: moneylaunderingservice
+    build:
+      context: .
+      dockerfile: MoneyLaunderingService/Dockerfile
+    depends_on:
+      - corebankingsystem
+    environment:
+        TopicPayments: "payments"
+        TopicLaundryCheck: "laundrycheck"
+        KafkaServers: "kafka:9092"
+
+  transactionanalysisservice:
+    image: ${DOCKER_REGISTRY-}transactionanalysisservice
+    container_name: transactionanalysisservice
+    build:
+      context: .
+      dockerfile: TransactionAnalysisService/Dockerfile
+    depends_on:
+      - moneylaunderingservice
+    environment:
+        TopicLaundryCheck: "laundrycheck"
+        KafkaServers: "kafka:9092"

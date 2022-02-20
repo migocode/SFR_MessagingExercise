@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MoneyLaunderingService": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
